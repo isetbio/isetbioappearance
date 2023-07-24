@@ -1,8 +1,5 @@
 # WLDichromacyAppearance
-Calculating color appearance for dichromatic subjects
+Calculating color appearance - mainly for dichromatic subjects.  Starting from the work of Haomiao Jiang.
 
-## Dependencies
 
-* [ISETBIO](https://github.com/isetbio/isetbio.git)
-* [CVX](http://cvxr.com/cvx/download/)
 
