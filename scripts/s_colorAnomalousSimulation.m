@@ -11,11 +11,14 @@ ieInit;
 %% load cone sensitiviy
 wave = 400:700;
 img  = im2double(imread('hats.jpg'));
-d = displayCreate('OculusDK2');
+d = displayCreate;
 d.dpi = 100;
 d = displaySet(d, 'wave', wave);
 
-% scene = sceneFromFile(img, 'rgb', [], d, wave);
+%%
+oi = oiCreate('human');
+
+%% scene = sceneFromFile(img, 'rgb', [], d, wave);
 scene = sceneCreate;
 scene = sceneSet(scene, 'wave', wave);
 p = sceneGet(scene, 'photons');
@@ -43,23 +46,43 @@ peakShift = [5 10 15 20 25.5 25.7 25.8 25.9];
 % peakShift = 0:26;
 transM = eye(3);
 
-%
+% Original code to create the anomalous photopigment.  I think we have
+% another routine for this now, implemented in ISETBio.  I thinkwe
+% implemented it for one of the student class projects. We are also
+% now missing the function coneGet().  So, we should update.
+%{
 sensor = sensorCreate('human');
 sensor = sensorSet(sensor, 'wave', wave);
-cone = sensorGet(sensor, 'human cone');
+cone   = sensorGet(sensor, 'human cone');
 absorbance = coneGet(cone, 'absorbance');
 shiftWave = 1./(1 ./ wave + 1/530 - 1/556);
 absorbance(:, 2) = interp1(shiftWave, absorbance(:, 1), wave, 'spline');
 spd = sensorGet(sensor, 'spectral qe'); % shall we use energy efficiency?
 spd = spd(:, 2:4);
 spd = bsxfun(@rdivide, spd, max(spd));
+%}
+
+%% Original cone spectra
+cm = coneMosaicRect;
+cm.plot('cone spectral qe');
+
+% ISETBio method for shifting the m cone.  Could be wrapped more
+% nicely.
+mAbsorbance = cm.pigment.absorbance_(:,2);
+wave = cm.pigment.wave_;
+absorbance = ShiftPhotopigmentAbsorbance(wave(:),mAbsorbance',20,'linear');
+cm.pigment.absorbance_(:,2) = absorbance;
+cm.plot('cone spectral qe');
+
+%%
+cm.plot('eye spectral qe','oi',oi);
 
 %% Compute transforms
 videoObj = VideoWriter('colorAnomalous_tmp.avi');
 videoObj.FrameRate = 5;
 open(videoObj);
 
-hfig = vcNewGraphWin([], 'wide');
+hfig = ieNewGraphWin([], 'wide');
 lms_tm = zeros(3, 3, length(peakShift));
 for ii = 1 : length(peakShift)
     waveNumber = 1 ./ wave - 1/556 + 1/(556 - peakShift(ii));
@@ -95,7 +118,7 @@ end
 close(videoObj);
 
 %% Simulation using Machado method
-vcNewGraphWin;
+ieNewGraphWin;
 peak_wave = zeros(length(peakShift), 1);
 rgb_tm = zeros(3, 3, length(peakShift));
 for ii = 1 : length(peakShift)
